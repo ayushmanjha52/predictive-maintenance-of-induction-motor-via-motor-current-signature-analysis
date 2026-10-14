@@ -1,0 +1,27 @@
+# secrets and local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# node
+node_modules/
+frontend/dist/
+
+# real dataset files (download them yourself; see README)
+backend/data/raw/
+*.mat
+!samples/*.mat
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
