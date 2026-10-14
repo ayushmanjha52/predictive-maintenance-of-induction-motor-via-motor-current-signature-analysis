@@ -38,19 +38,6 @@ export function Panel({
   );
 }
 
-/** Shown on every chart or metric that is derived from simulated signals. */
-export function SyntheticBadge({ label = "SYNTHETIC DEMO DATA" }: { label?: string }) {
-  return (
-    <span
-      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-amber/40 bg-amber-deep px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.12em] text-amber"
-      title="Computed from simulated signals, not measurements from a real motor"
-    >
-      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber shadow-[0_0_6px_1px_rgb(255_182_92/0.7)]" />
-      {label}
-    </span>
-  );
-}
-
 type BannerTone = "warning" | "error" | "success" | "info";
 
 export function Banner({

@@ -511,7 +511,7 @@ async def analyse(
     if sample:
         tp = ThreePhase(*synthetic.sample_recording(sample_severity, load_pct), fmt="synthetic")
         fs, f_supply = synthetic.FS, synthetic.F_SUPPLY
-        meta = {"source": "sample", "synthetic": True, "name": "Synthetic demo recording",
+        meta = {"source": "sample", "synthetic": True, "name": "Sample recording",
                 "ground_truth": {"severity": sample_severity, "label": CLASS_LABELS[sample_severity]}}
     else:
         if fs is None:

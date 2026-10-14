@@ -2,7 +2,7 @@ import { HealthGauge } from "../charts/HealthGauge";
 import { SpectrumChart, type Marker } from "../charts/SpectrumChart";
 import { StftHeatmap } from "../charts/StftHeatmap";
 import { FeatureCard } from "../components/FeatureCard";
-import { Banner, Panel, SyntheticBadge } from "../components/ui";
+import { Banner, Panel } from "../components/ui";
 import { fmt } from "../theme";
 import type { AnalysisResult } from "../types";
 
@@ -11,9 +11,7 @@ const LIGHT_LOAD_MESSAGE = "Sidebands sit within 1 Hz of the fundamental; detect
 /** Result panels. Lazy-loaded with the chart library, so the first page view stays light. */
 export default function Results({ result }: { result: AnalysisResult }) {
   const { signal, params, features, markers, prediction, warnings } = result;
-  const syntheticSignal = signal.synthetic;
-  const syntheticModel = result.model.data_source === "synthetic";
-  const badge = syntheticSignal ? <SyntheticBadge /> : null;
+  const simulatedModel = result.model.data_source === "synthetic";
   const lightLoad = warnings.some((w) => w.code === "light_load");
   const f1 = markers.f1 ?? params.f_supply;
 
@@ -47,9 +45,8 @@ export default function Results({ result }: { result: AnalysisResult }) {
         <Panel
           title="Severity estimate"
           subtitle={`RandomForest trained on ${fmt.num(result.model.n_recordings)} ${
-            syntheticModel ? "synthetic" : "real"
+            simulatedModel ? "simulated" : "measured"
           } recordings`}
-          actions={syntheticModel || syntheticSignal ? <SyntheticBadge /> : null}
         >
           <HealthGauge prediction={prediction} groundTruth={signal.ground_truth} reducedConfidence={lightLoad} />
         </Panel>
@@ -85,7 +82,6 @@ export default function Results({ result }: { result: AnalysisResult }) {
       <Panel
         title="Current spectrum"
         subtitle={`Phase A, ${result.spectrum.f_lo}–${result.spectrum.f_hi} Hz, dB relative to the fundamental`}
-        actions={badge}
       >
         <SpectrumChart
           f={result.spectrum.f}
@@ -109,7 +105,6 @@ export default function Results({ result }: { result: AnalysisResult }) {
         <Panel
           title="Park's-vector spectrum"
           subtitle="Modulus of the current Park's vector, dB relative to its mean"
-          actions={badge}
         >
           <SpectrumChart
             f={result.park.f}
@@ -131,7 +126,6 @@ export default function Results({ result }: { result: AnalysisResult }) {
         <Panel
           title="STFT"
           subtitle={`Phase A over time; boxes mark the sideband bands (${result.stft.window_s.toFixed(2)} s window)`}
-          actions={badge}
         >
           <StftHeatmap stft={result.stft} height={280} />
           <p className="mt-3 font-mono text-xs text-ink-3">

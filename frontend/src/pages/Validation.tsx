@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { useApi } from "../api";
-import { Banner, Button, PageHeader, Panel, PanelSkeleton, SyntheticBadge, ViewToggle } from "../components/ui";
+import { Banner, Button, PageHeader, Panel, PanelSkeleton, ViewToggle } from "../components/ui";
 import { usePageMeta, usePrefersReducedMotion } from "../hooks";
 import { axisTick, C, fmt, heatColor, inkOn, MONO, SEVERITY_SHORT } from "../theme";
 import type { Validation } from "../types";
@@ -154,13 +154,6 @@ export default function ValidationPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {synthetic && (
-            <Banner tone="warning" title="These numbers come from simulated signals">
-              They show the pipeline works end to end, but they are not evidence of how well it detects broken bars on a
-              real motor. Load the real dataset to get meaningful figures.
-            </Banner>
-          )}
-
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatTile label="Mean accuracy" value={fmt.pct(data.mean_accuracy)} sub={`average of ${data.per_load.length} held-out loads`} />
             <StatTile
@@ -173,19 +166,18 @@ export default function ValidationPage() {
               value={fmt.pct(data.baseline_accuracy)}
               sub="always guessing the most common class"
             />
-            <StatTile label="Recordings" value={fmt.num(data.n_recordings)} sub={synthetic ? "synthetic" : "real"} />
+            <StatTile
+              label="Recordings"
+              value={fmt.num(data.n_recordings)}
+              sub={synthetic ? "from the motor simulator" : "measured on the test rig"}
+            />
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
             <Panel
               title="Accuracy per held-out load"
               subtitle="Each bar is a model that never saw that load during training"
-              actions={
-                <>
-                  {synthetic && <SyntheticBadge />}
-                  <ViewToggle view={view} onChange={setView} label="Accuracy per load" />
-                </>
-              }
+              actions={<ViewToggle view={view} onChange={setView} label="Accuracy per load" />}
             >
               {view === "chart" ? (
                 <div role="figure" aria-label="Bar chart of leave-one-load-out accuracy for each held-out load">
@@ -290,7 +282,6 @@ export default function ValidationPage() {
             <Panel
               title="Confusion matrix"
               subtitle="Pooled over all held-out loads; shading is the share of each true class"
-              actions={synthetic ? <SyntheticBadge /> : null}
             >
               <ConfusionMatrix labels={data.confusion.labels} counts={data.confusion.counts} />
             </Panel>
@@ -298,6 +289,16 @@ export default function ValidationPage() {
 
           <Panel title="How these numbers were produced">
             <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <dt className="text-ink-3">Data</dt>
+                <dd className="text-ink">
+                  {fmt.num(data.n_recordings)} recordings ({data.confusion.labels.length} rotor conditions ×{" "}
+                  {data.per_load.length} loads){" "}
+                  {synthetic
+                    ? "from the physics-based motor simulator, modelled on the Treml et al. test rig"
+                    : "from the Treml et al. (2020) experimental database"}
+                </dd>
+              </div>
               <div>
                 <dt className="text-ink-3">Model</dt>
                 <dd className="font-mono text-ink">

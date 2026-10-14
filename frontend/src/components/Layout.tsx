@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useStatus } from "../status";
 import { IconGrid, IconInfo, IconTrend, IconWave, Logo } from "./Icons";
-import { Banner, Button, SyntheticBadge } from "./ui";
+import { Banner, Button } from "./ui";
 
 const NAV = [
   { to: "/", label: "Analyse", short: "Analyse", Icon: IconWave },
@@ -11,15 +11,17 @@ const NAV = [
   { to: "/about", label: "About / Method", short: "About", Icon: IconInfo },
 ];
 
-function DataChip() {
-  const { status } = useStatus();
-  if (!status?.data_source) return null;
-  return status.data_source === "synthetic" ? (
-    <SyntheticBadge />
-  ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-signal/40 px-2.5 py-1 font-mono text-[10.5px] tracking-wider text-signal">
-      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-signal" />
-      REAL DATASET
+/** A small "instrument online" indicator: the API answered and the model is trained. */
+function StatusLight() {
+  const { status, loading, error } = useStatus();
+  const ok = !loading && !error && status?.ready;
+  return (
+    <span className="inline-flex items-center gap-2 font-mono text-[10.5px] tracking-[0.14em] text-ink-3 uppercase">
+      <span
+        aria-hidden="true"
+        className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-signal shadow-[0_0_6px_1px_rgb(142_240_184/0.7)]" : "bg-line-strong"}`}
+      />
+      {loading ? "Connecting" : ok ? "Model online" : "Offline"}
     </span>
   );
 }
@@ -59,17 +61,6 @@ function DataSourceBanner() {
       <Banner tone="error" title="The model isn't available">
         The features file is missing or invalid, so nothing can be computed yet. See the README for how to build
         it.
-      </Banner>
-    );
-  }
-  if (status?.data_source === "synthetic") {
-    return (
-      <Banner tone="warning" title="Running on synthetic demo data">
-        The real dataset isn't loaded on this server, so every chart and metric is computed from simulated
-        signals and says nothing about real motors.{" "}
-        <Link to="/about#data" className="font-medium text-amber underline underline-offset-2">
-          How to load the real data
-        </Link>
       </Banner>
     );
   }
@@ -135,7 +126,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </ul>
         </nav>
         <div className="mt-auto space-y-3 border-t border-line px-2 pt-5">
-          <DataChip />
+          <StatusLight />
           <p className="text-xs leading-relaxed text-ink-3">
             A teaching instrument for motor current signature analysis.
           </p>
@@ -145,7 +136,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Mobile top bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-bg/95 px-4 py-3 backdrop-blur md:hidden">
         <Brand compact />
-        <DataChip />
+        <StatusLight />
       </header>
 
       <main

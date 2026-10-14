@@ -10,7 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { useApi } from "../api";
-import { Banner, Button, PageHeader, Panel, PanelSkeleton, SyntheticBadge, ViewToggle } from "../components/ui";
+import { Banner, Button, PageHeader, Panel, PanelSkeleton, ViewToggle } from "../components/ui";
 import { usePageMeta, usePrefersReducedMotion } from "../hooks";
 import { axisTick, C, fmt, MONO, SEVERITY_COLORS, SEVERITY_SHORT } from "../theme";
 import type { DetectionLimit } from "../types";
@@ -140,13 +140,8 @@ export default function DetectionLimitPage() {
             title={`Sideband level vs load`}
             subtitle={`Mean ${sideName} level per severity, dB relative to the fundamental · ${fmt.num(
               data.n_recordings,
-            )} recordings from the features file`}
-            actions={
-              <>
-                {synthetic && <SyntheticBadge />}
-                <ViewToggle view={view} onChange={setView} label="Sideband level" />
-              </>
-            }
+            )} ${synthetic ? "simulated" : "measured"} recordings`}
+            actions={<ViewToggle view={view} onChange={setView} label="Sideband level" />}
           >
             <ul className="mb-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-ink-2" aria-label="Legend">
               {data.series.map((s) => (
@@ -272,7 +267,6 @@ export default function DetectionLimitPage() {
                 {Math.abs(insight.gapLo) < 2 * insight.sdLo
                   ? "That gap is within two standard deviations, so a single light-load recording can't reliably separate a healthy rotor from one broken bar."
                   : "Even at that load the gap is larger than two standard deviations in this data."}
-                {synthetic && " (Computed from the synthetic demo dataset.)"}
               </p>
             </Panel>
           )}

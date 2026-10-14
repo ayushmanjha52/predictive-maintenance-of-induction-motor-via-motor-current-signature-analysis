@@ -23,7 +23,7 @@ Repository: [github.com/ayushmanjha52/predictive-maintenance-of-induction-motor-
 - **Model validation:** leave-one-load-out accuracy for each held-out load, plus a majority-class baseline and the pooled confusion matrix. Everything is computed when the server starts; no number is hard-coded.
 - **About / Method:** a plain-language explanation of the physics, and the dataset citation.
 
-> **Data status.** MotorScope is built for the public dataset by Treml et al. (2020), cited below. Downloading it needs an IEEE DataPort login, so it isn't bundled. Until it's added, the server trains on a **physics-based synthetic dataset**. Every chart and metric derived from it carries a **SYNTHETIC DEMO DATA** badge, and the API reports `data_source: "synthetic"`. Those numbers show that the pipeline works; they aren't evidence of real-world accuracy. See [Using the real dataset](#using-the-real-dataset).
+> **Data.** The model is trained and validated on recordings from a **physics-based simulator** of the motor in the public database by Treml et al. (2020), cited below. It follows the same design: 5 rotor conditions × 8 loads × 10 runs. The measured database needs an IEEE DataPort login, so it isn't bundled. The pipeline reads it directly, and loading it retrains every result. Until then, the site describes its results as coming from simulated recordings and the API reports `data_source: "synthetic"`. Accuracy on simulated data shows that the method works end to end; it isn't a claim about real motors. See [Using the real dataset](#using-the-real-dataset).
 
 ## Stack
 
@@ -52,7 +52,7 @@ Open **http://localhost:5173**, keep **Load sample** selected and press **Run an
 
 ### Trying an upload
 
-`samples/SYNTHETIC_3-broken-bars_87.5pct-load_fs5000.csv` is a synthetic recording with three broken bars at 87.5% load. Choose **Upload file**, set the sampling frequency to **5000** and the load to **87.5%**. To generate others, run `python synthetic.py out.csv --severity 2 --load 50` from `backend/`.
+`samples/sample_3-broken-bars_87.5pct-load_fs5000.csv` is a simulated recording with three broken bars at 87.5% load. Choose **Upload file**, set the sampling frequency to **5000** and the load to **87.5%**. To generate others, run `python synthetic.py out.csv --severity 2 --load 50` from `backend/`.
 
 Accepted formats:
 
@@ -151,7 +151,7 @@ The rig is a 1 hp, 4-pole, 60 Hz motor with a 34-bar rotor. It was tested with a
    - `ia_key`, `ib_key` and `ic_key` are optional dotted paths to the currents inside a `.mat` struct, such as `rec.Ia`. Leave them empty to find variables by name.
 
 3. Run `python build_features.py --manifest manifest.csv` from `backend/`. This writes `data/features.csv`.
-4. Restart the server. `features.csv` takes precedence over the synthetic file, and the badges disappear.
+4. Restart the server. `features.csv` takes precedence over the simulated file, and the site switches to describing its results as measured.
 
 The archive's internal layout isn't documented publicly, so the manifest is deliberately generic rather than tied to particular file names. Check the sampling rate against the dataset's own readme: published figures range from 50 kHz to about 55.6 kHz. A wrong value is caught by the server's sampling-rate check.
 
@@ -222,7 +222,7 @@ frontend/
   public/             icons and the social preview image
 api/index.py          Vercel entry point (mounts the backend under /api)
 scripts/              cross-platform setup and run helpers
-samples/              synthetic CSV for trying uploads
+samples/              sample CSV for trying uploads
 requirements.txt      pinned Python runtime dependencies
 vercel.json           Vercel build, routing and headers
 Dockerfile            single-container build

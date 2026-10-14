@@ -175,7 +175,7 @@ export default function AnalysePage() {
                 {mode === "sample" ? (
                   <div className="space-y-2">
                     <label htmlFor={ids.sev} className="block text-sm text-ink-2">
-                      Condition of the simulated motor
+                      Rotor condition
                     </label>
                     <select
                       id={ids.sev}
@@ -190,9 +190,8 @@ export default function AnalysePage() {
                       ))}
                     </select>
                     <p className="text-xs leading-relaxed text-ink-3">
-                      A synthetic {status?.sample.duration_s ?? 18} s recording at {fmt.num(sampleFs)} Hz, generated on the
-                      server at the load you choose. Results are labelled{" "}
-                      <span className="font-mono text-amber">SYNTHETIC DEMO DATA</span>.
+                      An {status?.sample.duration_s ?? 18} s three-phase recording at {fmt.num(sampleFs)} Hz from the
+                      motor model, generated at the load you choose.
                     </p>
                   </div>
                 ) : (
@@ -363,7 +362,7 @@ export default function AnalysePage() {
               </Button>
             )}
             <span className="text-xs text-ink-3">
-              {mode === "sample" ? "Uses the synthetic sample." : file ? `Will upload ${file.name}.` : "No file chosen yet."}
+              {mode === "sample" ? "Uses the sample recording." : file ? `Will upload ${file.name}.` : "No file chosen yet."}
             </span>
           </div>
         </Panel>

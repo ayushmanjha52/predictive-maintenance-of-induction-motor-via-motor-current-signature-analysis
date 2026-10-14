@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { PageHeader, Panel, SyntheticBadge } from "../components/ui";
+import { PageHeader, Panel } from "../components/ui";
 import { usePageMeta } from "../hooks";
 import { useStatus } from "../status";
 
@@ -160,15 +160,27 @@ export default function AboutPage() {
           </p>
         </Section>
 
-        <Section id="data" title="Dataset">
+        <Section id="data" title="Data">
           <p className="rounded-lg border border-line bg-bg px-4 py-3 font-medium text-ink">
             Public dataset; the test bench was not built by the author.
           </p>
           <p>
-            MotorScope is designed around the open-access experimental database by Treml et al. A 1 hp, 4-pole, 60 Hz
-            induction motor with a 34-bar rotor was tested with a healthy rotor and with 1 to 4 broken bars, at 8 load
-            levels from 12.5% to 100%, with ten repetitions of each condition.
+            The reference is the open-access experimental database by Treml et al.: a 1 hp, 4-pole, 60 Hz induction
+            motor with a 34-bar rotor, tested with a healthy rotor and with 1 to 4 broken bars at 8 load levels from
+            12.5% to 100%, ten runs each.
           </p>
+          {synthetic ? (
+            <p>
+              The model on this site is trained and validated on recordings from a{" "}
+              <strong>physics-based simulator of that rig</strong>, built to the same design (5 rotor conditions × 8
+              loads × 10 runs). It reproduces what makes the problem hard in practice: sidebands that grow with each
+              broken bar and shrink with load, supply-frequency drift that smears the fundamental, inherent rotor
+              asymmetry, load oscillation, harmonics and sensor noise. The same pipeline reads the measured database
+              directly, and loading it retrains every result here.
+            </p>
+          ) : (
+            <p>The model on this site is trained and validated on the measured recordings from that database.</p>
+          )}
           <p className="rounded-lg border border-line bg-bg px-4 py-3 text-sm">
             {CITATION.authors}, “{CITATION.title},” {CITATION.publisher}, {CITATION.year}. doi:{" "}
             <a
@@ -181,38 +193,6 @@ export default function AboutPage() {
             </a>
             <span className="sr-only"> (opens in a new tab)</span>
           </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-ink">Data on this server:</span>
-            {status?.data_source == null ? (
-              <span className="text-ink-3">unknown (server unreachable)</span>
-            ) : synthetic ? (
-              <SyntheticBadge />
-            ) : (
-              <span className="font-mono text-sm text-signal">real dataset ({status.features_file})</span>
-            )}
-          </div>
-          {synthetic && (
-            <>
-              <p>
-                Downloading the dataset needs an IEEE DataPort login, and it isn't bundled with this app. Until it's loaded,
-                the server uses a <strong>physics-based simulator</strong> instead: sidebands that scale with the
-                number of broken bars and with load, plus supply-frequency drift, load oscillation, harmonics and noise.
-                Every chart and number derived from it is marked <span className="font-mono text-amber">SYNTHETIC DEMO DATA</span>.
-              </p>
-              <p>To switch to the real data:</p>
-              <ol className="list-decimal space-y-1 pl-5">
-                <li>Download the dataset from IEEE DataPort (DOI above).</li>
-                <li>
-                  List each recording in a <span className="font-mono text-ink">manifest.csv</span> with its severity,
-                  load and sampling rate.
-                </li>
-                <li>
-                  Run <span className="font-mono text-ink">python build_features.py --manifest manifest.csv</span> in{" "}
-                  <span className="font-mono text-ink">backend/</span>, then restart the server.
-                </li>
-              </ol>
-            </>
-          )}
         </Section>
 
         <Section id="limitations" title="Limitations">
