@@ -56,6 +56,10 @@ MAX_UPLOAD_BYTES = int(float(os.getenv("MAX_UPLOAD_MB", "50")) * 1024 * 1024)
 RATE_LIMIT_PER_MIN = int(os.getenv("RATE_LIMIT_PER_MIN", "20"))
 MAX_CONCURRENT = int(os.getenv("MAX_CONCURRENT_ANALYSES", "2"))
 ENABLE_HSTS = os.getenv("ENABLE_HSTS", "false").strip().lower() == "true"
+# Mount point for the API when the site is served by someone else (e.g. "/api" on Vercel).
+API_PREFIX = os.getenv("API_PREFIX", "").rstrip("/")
+# Only behind a proxy that sets these headers itself (Vercel does); otherwise clients could spoof them.
+TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "false").strip().lower() == "true"
 DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data")))
 # Path to the built frontend (frontend/dist). When set, one process serves the site
 # at / and the API under /api, which is how the Docker image runs.
@@ -222,14 +226,32 @@ class RateLimiter:
 
 # --------------------------------------------------------------------------- app
 
+_model_lock = threading.Lock()
+_model_state: dict[str, ModelBundle | None] = {}
+
+
+def _load_model() -> ModelBundle | None:
+    """Train once per process; later calls return the same bundle (or None if the data is unusable)."""
+    with _model_lock:
+        if "bundle" not in _model_state:
+            try:
+                _model_state["bundle"] = ModelBundle(load_dataset(DATA_DIR))
+            except DatasetError as exc:
+                log.error("Model unavailable: %s", exc)
+                _model_state["bundle"] = None
+        return _model_state["bundle"]
+
+
+async def _get_model() -> ModelBundle | None:
+    if "bundle" in _model_state:
+        return _model_state["bundle"]
+    return await run_in_threadpool(_load_model)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.bundle = None
-    try:
-        dataset = load_dataset(DATA_DIR)
-        app.state.bundle = await run_in_threadpool(ModelBundle, dataset)
-    except DatasetError as exc:
-        log.error("Model unavailable: %s", exc)
+    # Serverless hosts may never run this hook, so _get_model() also loads lazily on first request.
+    await _get_model()
     yield
 
 
@@ -293,8 +315,16 @@ async def _unhandled(request: Request, exc: Exception):
                           "happening, report the request ID.", request)
 
 
-def _bundle(request: Request) -> ModelBundle:
-    bundle = request.app.state.bundle
+def _client_ip(request: Request) -> str:
+    if TRUST_PROXY_HEADERS:
+        forwarded = request.headers.get("x-real-ip") or request.headers.get("x-forwarded-for", "").split(",")[0]
+        if forwarded.strip():
+            return forwarded.strip()
+    return request.client.host if request.client else "unknown"
+
+
+async def _bundle() -> ModelBundle:
+    bundle = await _get_model()
     if bundle is None:
         raise ServiceUnavailable("The model isn't available: the features file is missing or invalid. "
                                  "The server log has details.")
@@ -429,7 +459,7 @@ async def health():
 
 @router.get("/status")
 async def status(request: Request):
-    bundle = request.app.state.bundle
+    bundle = await _get_model()
     return {
         "ready": bundle is not None,
         **(bundle.summary if bundle else {"data_source": None}),
@@ -445,14 +475,14 @@ async def status(request: Request):
 
 @router.get("/detection-limit")
 async def detection_limit(request: Request):
-    bundle = _bundle(request)
+    bundle = await _bundle()
     return {"data_source": bundle.dataset.source, "computed_at": bundle.computed_at,
             "n_recordings": int(len(bundle.dataset.df)), **bundle.detection}
 
 
 @router.get("/validation")
 async def validation(request: Request):
-    bundle = _bundle(request)
+    bundle = await _bundle()
     return {"data_source": bundle.dataset.source, "computed_at": bundle.computed_at,
             "n_recordings": int(len(bundle.dataset.df)), "model": bundle.summary["model"],
             **bundle.validation}
@@ -470,8 +500,8 @@ async def analyse(
     x_file_name: str | None = Header(None, alias="X-File-Name", max_length=800),
 ):
     filename = unquote(x_file_name)[:255] if x_file_name else None
-    bundle = _bundle(request)
-    client = request.client.host if request.client else "unknown"
+    bundle = await _bundle()
+    client = _client_ip(request)
     wait = limiter.retry_after(client)
     if wait is not None:
         return error_response(429, "rate_limited",
@@ -518,7 +548,7 @@ async def analyse(
 SPA_ROUTES = {"", "detection-limit", "validation", "about", "privacy"}
 
 if FRONTEND_DIST is None:
-    app.include_router(router)
+    app.include_router(router, prefix=API_PREFIX)
 else:
     app.include_router(router, prefix="/api")
 

@@ -24,7 +24,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     FRAME_ANCESTORS="'self' https://huggingface.co"
 RUN useradd --create-home --uid 1000 app
 WORKDIR /app
-COPY backend/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./
 COPY --from=web /web/dist ./site

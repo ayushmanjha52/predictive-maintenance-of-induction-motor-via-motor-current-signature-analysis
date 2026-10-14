@@ -15,6 +15,9 @@ __pycache__/
 node_modules/
 frontend/dist/
 
+# local deploy links (Vercel / Railway CLIs)
+.vercel/
+
 # real dataset files (download them yourself; see README)
 backend/data/raw/
 *.mat

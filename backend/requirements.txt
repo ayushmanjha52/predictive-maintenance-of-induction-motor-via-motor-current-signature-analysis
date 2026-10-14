@@ -1,7 +1,2 @@
-fastapi==0.143.0
-uvicorn[standard]==0.54.0
-numpy==2.4.6
-scipy==1.17.1
-scikit-learn==1.9.1
-pandas==3.0.6
-python-dotenv==1.2.4
+# Pinned runtime dependencies live in the repository root (Vercel reads them there).
+-r ../requirements.txt

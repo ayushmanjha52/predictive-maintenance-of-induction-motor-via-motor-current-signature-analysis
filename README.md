@@ -4,6 +4,8 @@
 
 MotorScope finds broken rotor bars by listening to a motor's stator current. Each broken bar adds two small sidebands either side of the supply frequency, and the app measures them, combines them with Park's-vector and STFT features, and estimates fault severity with a RandomForest. It also shows honestly where the method stops working: at light load.
 
+**Live demo: [motorscope.vercel.app](https://motorscope.vercel.app)**
+
 Repository: [github.com/ayushmanjha52/predictive-maintenance-of-induction-motor-via-motor-current-signature-analysis](https://github.com/ayushmanjha52/predictive-maintenance-of-induction-motor-via-motor-current-signature-analysis)
 
 ![MotorScope analysis view](docs/screenshots/desktop-analyse.png)
@@ -60,9 +62,33 @@ Accepted formats:
 
 ## Deploy
 
-The repository builds into **one Docker container**: FastAPI serves the built site at `/` and the API under `/api`. No separate frontend host is needed, and there are no secrets to configure.
+### Vercel (the live demo)
 
-### Hugging Face Spaces (free, recommended)
+[motorscope.vercel.app](https://motorscope.vercel.app) runs on Vercel. The built site is served from Vercel's CDN, and the FastAPI backend runs unchanged as a Python function:
+
+- `vercel.json` sets the build, routing, security headers and asset caching.
+- `api/index.py` mounts the app under `/api`.
+- Python dependencies come from the root `requirements.txt`.
+
+To deploy your own copy:
+
+```bash
+npm i -g vercel
+vercel link
+vercel deploy --prod
+```
+
+Things to know on Vercel:
+
+- **Upload size:** limited to 4 MB, because Vercel caps a function's request body at 4.5 MB. The sample CSV is 3 MB.
+- **Cold starts:** the first request after an idle period takes a few seconds while the model trains.
+- **Rate limiting** uses the client IP that Vercel's proxy reports.
+
+### Docker
+
+The repository also builds into **one Docker container**: FastAPI serves the built site at `/` and the API under `/api`. No separate frontend host is needed, there are no secrets to configure, and there's no upload limit beyond `MAX_UPLOAD_MB`.
+
+### Hugging Face Spaces
 
 1. Create a new Space at [huggingface.co/new-space](https://huggingface.co/new-space) and choose **Docker → Blank**.
 2. Push this repository to the Space. Hugging Face reads its settings from a short header at the top of the Space's `README.md`, so add the header on a deploy branch:
@@ -157,7 +183,7 @@ Errors share one shape: `{"error": {"code", "message", "request_id"}}`. In the c
 ## Tests
 
 ```bash
-npm test         # 44 backend tests
+npm test         # 45 backend tests
 npm run audit    # npm audit + pip-audit
 npm run build    # type-check + production build
 ```
@@ -168,6 +194,7 @@ The tests cover:
 - **Bad parameters:** wrong or contradictory sampling rates, out-of-range values.
 - **Hardening:** rate limiting, host and CORS checks, security headers on error responses, no internal details in 500 errors.
 - **Container mode:** page routing, real 404s, path traversal and asset caching.
+- **Serverless mode:** the API under `/api`, a model that loads without a startup hook, and rate limiting by the proxy-reported IP.
 
 ## Security and privacy
 
@@ -193,8 +220,11 @@ frontend/
   src/pages/          Analyse, Detection limit, Validation, About, Privacy, 404
   src/charts/         spectrum, STFT heatmap, severity gauge
   public/             icons and the social preview image
+api/index.py          Vercel entry point (mounts the backend under /api)
 scripts/              cross-platform setup and run helpers
 samples/              synthetic CSV for trying uploads
+requirements.txt      pinned Python runtime dependencies
+vercel.json           Vercel build, routing and headers
 Dockerfile            single-container build
 ```
 

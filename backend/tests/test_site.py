@@ -56,6 +56,28 @@ def test_static_files_and_caching(site_client):
     assert r.status_code == 200 and "immutable" in r.headers["cache-control"]
 
 
+def test_serverless_mode_prefix_and_lazy_model():
+    """Like Vercel: API under /api, and no lifespan hook, so the model loads on first request."""
+    mp = pytest.MonkeyPatch()
+    mp.setenv("API_PREFIX", "/api")
+    mp.setenv("TRUST_PROXY_HEADERS", "true")
+    mp.delenv("FRONTEND_DIST", raising=False)
+    importlib.reload(main)
+    try:
+        c = TestClient(main.app, base_url="http://localhost")  # no `with`: lifespan never runs
+        assert "bundle" not in main._model_state
+        r = c.get("/api/validation")
+        assert r.status_code == 200 and r.json()["n_recordings"] > 0
+        assert c.get("/validation").status_code == 404
+        r = c.post("/api/analyse", params={"sample": "true", "load_pct": 50},
+                   headers={"X-Real-IP": "203.0.113.7"})
+        assert r.status_code == 200
+        assert "203.0.113.7" in main.limiter.hits  # rate limit keyed on the proxy-reported client
+    finally:
+        mp.undo()
+        importlib.reload(main)
+
+
 @pytest.mark.parametrize("path", ["/../main.py", "/..%2Fmain.py", "/%2e%2e/%2e%2e/backend/main.py"])
 def test_no_path_traversal(site_client, path):
     r = site_client.get(path)
