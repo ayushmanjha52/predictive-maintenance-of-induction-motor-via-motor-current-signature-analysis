@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>MotorScope</title>
+  <rect x=".5" y=".5" width="31" height="31" rx="9" fill="#121110" stroke="#2c2926"/>
+  <path d="M6 22.5h20" stroke="#3a3632" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M10 22.5v-4.5M22 22.5v-4.5" stroke="#f26b6b" stroke-width="2" stroke-linecap="round"/>
+  <path d="M13.2 22.5v-6.5M18.8 22.5v-6.5" stroke="#8ef0b8" stroke-opacity=".45" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M16 22.5V7.5" stroke="#8ef0b8" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="16" cy="7.5" r="2.2" fill="#8ef0b8" fill-opacity=".25"/>
+</svg>
