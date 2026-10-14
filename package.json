@@ -1,0 +1,19 @@
+{
+  "name": "motorscope",
+  "private": true,
+  "description": "MCSA broken-rotor-bar detection demo: FastAPI backend + React frontend",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "concurrently --kill-others-on-fail --names api,web --prefix-colors cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "node scripts/run-api.mjs --dev",
+    "dev:web": "npm --prefix frontend run dev",
+    "start:api": "node scripts/run-api.mjs",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "test": "node scripts/run-api.mjs --test",
+    "audit": "npm --prefix frontend audit && node scripts/run-api.mjs --audit"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.6"
+  }
+}
